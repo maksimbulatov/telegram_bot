@@ -1,18 +1,21 @@
-package service;
+package com.telegram_bot.telegram_bot.service;
 
-import Config.BotConfig;
+import com.telegram_bot.telegram_bot.Config.BotConfig;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jvnet.hk2.annotations.Service;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-@Service
+@Component
+@Slf4j
 @AllArgsConstructor
 public class TelegramBot extends TelegramLongPollingBot {
-
+    @Autowired
     private final BotConfig botConfig;
 
     @Override
@@ -20,11 +23,11 @@ public class TelegramBot extends TelegramLongPollingBot {
         return botConfig.getBotName();
 
     }
-
     @Override
     public String getBotToken() {
         return botConfig.getToken();
     }
+
 
     @Override
     public void onUpdateReceived(Update update) {
@@ -74,7 +77,6 @@ public class TelegramBot extends TelegramLongPollingBot {
         try {
             execute(message);
         } catch (TelegramApiException e) {
-            throw new RuntimeException(e);
 
         }
 
