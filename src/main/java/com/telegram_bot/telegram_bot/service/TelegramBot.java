@@ -1,22 +1,36 @@
 package com.telegram_bot.telegram_bot.service;
 
 import com.telegram_bot.telegram_bot.Config.BotConfig;
+import com.telegram_bot.telegram_bot.FrankfurtApi.ExchangeController;
+import com.telegram_bot.telegram_bot.FrankfurtApi.FrankfurterAPI;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jvnet.hk2.annotations.Service;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.io.IOException;
+import java.time.Duration;
+
 @Component
 @Slf4j
 @AllArgsConstructor
-public class TelegramBot extends TelegramLongPollingBot {
+public class TelegramBot extends TelegramLongPollingBot{
+
+    @Autowired
+    private BotService botService;
     @Autowired
     private final BotConfig botConfig;
+
+    @Autowired
+    private ExchangeController exchangeController;
+
+
 
     @Override
     public String getBotUsername() {
@@ -35,12 +49,44 @@ public class TelegramBot extends TelegramLongPollingBot {
             String messageText = update.getMessage().getText();
             long chatId = update.getMessage().getChatId();
 
-            switch (messageText){
-                case "/start":
-                        startCommandReceived(chatId, update.getMessage().getChat().getFirstName());
-                        break;
+            if(messageText.equals("/start")){
+                botService.registerUser(update.getMessage());
+                startCommandReceived(chatId, update.getMessage().getChat().getFirstName());
+                //botService.testSchedule();
 
-                default:
+            }
+            else if (messageText.matches("^/exchange [A-Z]{3} [A-Z]{3}$")) {
+                // Extract the currency codes from the message
+                String[] parts = messageText.split(" ");
+                String fromCurrency = parts[1];
+                String toCurrency = parts[2];
+
+                SendMessage(chatId,botService.getExchangeRate(fromCurrency, toCurrency));
+
+            }
+
+            else if (messageText.matches("/subscribe [A-Z]{3} [A-Z]{3} (\\d+h|\\d+d)")){
+                    String[] args = messageText.split(" ");
+                    String fromCurrency = args[1];
+                    String toCurrency = args[2];
+                    String durationString = args[3];
+
+                botService.subscribeUser(update.getMessage(),fromCurrency,toCurrency,durationString);
+
+                    //Subscription subscription = new Subscription(user.getId(), fromCurrency, toCurrency, duration);
+                    //subscriptionRepository.save(subscription);
+
+                
+            } else if (messageText.matches("/unsubscribe [A-Z]{3} [A-Z]{3}")) {
+                String[] args = messageText.split(" ");
+                String fromCurrency = args[1];
+                String toCurrency = args[2];
+
+
+            } else if (messageText.equals("/unsubscribe all")){
+                botService.unsubscribeAll(update.getMessage());
+            }
+            else {
                     SendMessage(chatId,"Sorry, command was not recognised");
                     }
 
@@ -69,6 +115,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
 
     }
+
     private void SendMessage(long chatId, String texToSend) {
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
