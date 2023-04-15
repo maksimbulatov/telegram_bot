@@ -12,6 +12,7 @@ import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.Message;
 
 import java.io.IOException;
+import java.util.List;
 
 
 @Service
@@ -65,11 +66,26 @@ public class BotService {
     }
 
     public void unsubscribeAll(Message msg) {
-        if (subscriptionRepositary.findById(msg.getChatId()).isPresent()) {
+       // if (subscriptionRepositary.findById(msg.getChatId()).isPresent()) {
             Long chatId = msg.getChatId();
             User user = userRepository.findByChatId(chatId);
-            subscriptionRepositary.deleteByUser(user);
+            if (user != null) {
+                subscriptionRepositary.deleteByUser(user);
+            }
+
+        //}
+    }
+
+    public void unsubscribeFrom(Message msg,String fromCurrency, String toCurrency){
+        Long chatId = msg.getChatId();
+        User user = userRepository.findByChatId(chatId);
+        List<SubscriptionTable> subscriptions = subscriptionRepositary.findByUserAndFromCurrencyAndToCurrency(user, fromCurrency, toCurrency);
+        if (!subscriptions.isEmpty()) {
+            SubscriptionTable subscription = subscriptions.get(0);
+            subscriptionRepositary.delete(subscription);
         }
+
+
     }
 
     public String getExchangeRate(String fromCurrency, String toCurrency) {

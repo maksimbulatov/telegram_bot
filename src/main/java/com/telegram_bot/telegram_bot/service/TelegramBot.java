@@ -73,14 +73,15 @@ public class TelegramBot extends TelegramLongPollingBot{
 
                 botService.subscribeUser(update.getMessage(),fromCurrency,toCurrency,durationString);
 
-                    //Subscription subscription = new Subscription(user.getId(), fromCurrency, toCurrency, duration);
-                    //subscriptionRepository.save(subscription);
 
                 
             } else if (messageText.matches("/unsubscribe [A-Z]{3} [A-Z]{3}")) {
                 String[] args = messageText.split(" ");
                 String fromCurrency = args[1];
                 String toCurrency = args[2];
+
+                botService.unsubscribeFrom(update.getMessage(),fromCurrency,toCurrency);
+
 
 
             } else if (messageText.equals("/unsubscribe all")){
@@ -116,7 +117,7 @@ public class TelegramBot extends TelegramLongPollingBot{
 
     }
 
-    private void SendMessage(long chatId, String texToSend) {
+    public void SendMessage(long chatId, String texToSend) {
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
         message.setText(texToSend);
